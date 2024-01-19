@@ -47,10 +47,10 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }} 
         
-    # docker buildx 셋업
-    - name: Set up Docker buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v3
+    # # docker buildx 셋업
+    # - name: Set up Docker buildx
+    #   id: buildx
+    #   uses: docker/setup-buildx-action@v3
 
     # Github Container Registry 로그인
     # CR_PAT: Container Registry Personal Acccess Token
