@@ -13,9 +13,6 @@ on:
   push:
     branches: [ "main" ]
 
-permissions:
-  contents: read
-
 jobs:
   # Spring boot 앱을 빌드해서 Github Container Registry에 push하는 job
   build-docker-image-and-push-to-ghcr:
