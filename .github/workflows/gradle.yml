@@ -25,7 +25,7 @@ jobs:
     steps:
     # Github 레포지토리로부터 CI서버로 소스코드를 내려받은 후에 지정한 브랜치로 전환하는 역할
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # env 셋업 
     # The branch or tag ref that triggered the workflow. For example, refs/heads/feature-branch-1.
