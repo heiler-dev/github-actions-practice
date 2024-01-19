@@ -32,7 +32,7 @@ jobs:
     # env 셋업 
     # The branch or tag ref that triggered the workflow. For example, refs/heads/feature-branch-1.
     - name: Set env
-      run: echo "RELEASE_VERSION=v${GITHUB_BASE_REF}" >> $GITHUB_ENV
+      run: echo "RELEASE_VERSION=v${GITHUB_HEAD_REF}" >> $GITHUB_ENV
 
     # Java 17 버전 세팅
     - name: Set up JDK 11
