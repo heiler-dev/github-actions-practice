@@ -7,11 +7,10 @@
 
 name: Java CI with Gradle
 
+# on: 어떤 이벤트가 발생했을 때 해당 workflow를 실행시킬지에 대한 정의
 on:
+	# main 브랜치에서 push 이벤트가 발생하면 workflow 실행
   push:
-    branches: [ "main" ]
-      
-  pull_request:
     branches: [ "main" ]
 
 permissions:
@@ -19,17 +18,13 @@ permissions:
 
 jobs:
   # Spring boot 앱을 빌드해서 Github Container Registry에 push하는 job
-  build-docker-image-and-push-to-docker-hub:
+  build-docker-image-and-push-to-ghcr:
     runs-on: ubuntu-latest
     
     steps:
     # Github 레포지토리로부터 CI서버로 소스코드를 내려받은 후에 지정한 브랜치로 전환하는 역할
     - name: Checkout
       uses: actions/checkout@v4
-
-    # env 셋업 
-    - name: Set env
-      run: echo "RELEASE_VERSION=v${GITHUB_REF_NAME}" >> $GITHUB_ENV
 
     # Java 17 버전 세팅
     - name: Set up JDK 11
@@ -70,10 +65,16 @@ jobs:
         context: .
         file: ./Dockerfile
         push: true
-        tags: |
-          ghcr.io/${{ github.repository_owner }}/github-actions-practice:latest
-          ghcr.io/${{ github.repository_owner }}/github-actions-practice:${{ env.RELEASE_VERSION }}
-    
+        tags: ghcr.io/${{ github.repository_owner }}/github-actions-practice:latest
+
+    # 버전 태깅
+    - name: Bump version and push tag
+      id: tag_version
+      uses: anothrNick/github-tag-action@1.64.0
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # if you don't want to set write permissions use a PAT token
+        WITH_V: false
+        
     # docker_build 로깅
     - name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
