@@ -18,10 +18,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # Spring boot 앱을 빌드해서 Github Container Registry에 push하는 job
-  build-docker-image-and-push-to-ghcr:
+  build:
     runs-on: ubuntu-latest
-    
     steps:
       # Github 레포지토리로부터 CI서버로 소스코드를 내려받은 후에 지정한 브랜치로 전환하는 역할
       - name: Checkout
@@ -43,7 +41,28 @@ jobs:
         uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
         with:
           arguments: clean bootJar
-      
+          
+  test:
+    # build가 사전에 통과해야 해당 job을 실행
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Unit test 진행
+      - name: Test with Gradle
+        run: ./gradlew --info test
+        
+      # Unit test에 대한 리포트 작성
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          junit_files: '**/build/test-results/test/TEST-*.xml'
+  
+  push-to-ghcr:
+    # test가 사전에 통과해야 해당 job을 실행
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
       # 버전 태깅
       - name: Bump version and push tag
         id: tag_version
@@ -84,3 +103,4 @@ jobs:
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
           body: ${{ steps.tag_version.outputs.changelog }}
+  
