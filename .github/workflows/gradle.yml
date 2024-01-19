@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   # Spring boot 앱을 빌드해서 DockerHub에 push하는 job
-  build-and-upload-docker-hub:
+  build-and-push-to-docker-hub:
     runs-on: ubuntu-latest
     
     steps:
@@ -40,7 +40,7 @@ jobs:
     - name: Build with Gradle
       uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
       with:
-        arguments: build
+        arguments: clean bootJar
 
     # Docker 이미지 빌드
     - name: Build Docker image
