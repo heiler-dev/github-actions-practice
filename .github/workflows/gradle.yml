@@ -18,12 +18,18 @@ permissions:
 
 jobs:
   # Spring boot 앱을 빌드해서 DockerHub에 push하는 job
-  build-and-push-to-docker-hub:
+  build-docker-image-and-push-to-docker-hub:
     runs-on: ubuntu-latest
     
     steps:
-    # 0. Github 레포지토리로부터 CI서버로 소스코드를 내려받은 후에 지정한 브랜치로 전환하는 역할
-    - uses: actions/checkout@v3
+    # Github 레포지토리로부터 CI서버로 소스코드를 내려받은 후에 지정한 브랜치로 전환하는 역할
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    # env 셋업 
+    # The branch or tag ref that triggered the workflow. For example, refs/heads/feature-branch-1. If neither a branch or tag is available for the event type, the variable will not exist.
+    - name: Set env
+      run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/v}" >> $GITHUB_ENV
 
     # Java 17 버전 세팅
     - name: Set up JDK 11
@@ -42,17 +48,28 @@ jobs:
       with:
         arguments: clean bootJar
 
-    # Docker 이미지 빌드
-    - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/github-actions-practice .
+    # docker buildx 셋업
+    - name: Set up Docker buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
 
-    # Docker 로그인
-    - name: Docker login
-      uses: docker/login-action@v2
+    # DockerHub 로그인
+    - name: Login to Github Container Registry
+      uses: docker/login-actions@v2
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        # CR_PAT: Container Registry Personal Acccess Token
+        password: ${{ secrets.CR_PAT }}
     
-    # DockerHub에 Docker 이미지 push
-    - name: Push Docker image to Docker Hub
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/github-actions-practice
+    # Docker 이미지 빌드 및 DockerHub에 push
+    - name: Build and Push
+      uses: docker/build-push-action@v2
+      id: docker_build
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/github-actions-practice:latest
+          ghcr.io/${{ github.repository_owner }}/github-actions-practice:${{ env.RELEASE_VERSION }}
