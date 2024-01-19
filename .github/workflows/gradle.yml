@@ -56,7 +56,7 @@ jobs:
     # DockerHub 로그인
     # CR_PAT: Container Registry Personal Acccess Token
     - name: Login to Github Container Registry
-      uses: docker/login-actions@v3
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}        
