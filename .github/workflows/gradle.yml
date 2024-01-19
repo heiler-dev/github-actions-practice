@@ -45,12 +45,7 @@ jobs:
       id: tag_version
       uses: mathieudutour/github-tag-action@v6.1
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }} 
-        
-    # # docker buildx 셋업
-    # - name: Set up Docker buildx
-    #   id: buildx
-    #   uses: docker/setup-buildx-action@v3
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     # Github Container Registry 로그인
     # CR_PAT: Container Registry Personal Acccess Token
@@ -60,7 +55,12 @@ jobs:
         registry: ghcr.io
         username: ${{ github.repository_owner }}        
         password: ${{ secrets.CR_PAT }}
-    
+        
+    # Docker buildx 셋업
+    - name: Set up Docker buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v3
+      
     # Docker 이미지 빌드 및 Github Container Registry에 push
     - name: Build and Push
       uses: docker/build-push-action@v5
