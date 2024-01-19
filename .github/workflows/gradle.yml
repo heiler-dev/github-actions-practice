@@ -9,7 +9,7 @@ name: Java CI with Gradle
 
 # on: 어떤 이벤트가 발생했을 때 해당 workflow를 실행시킬지에 대한 정의
 on:
-	# main 브랜치에서 push 이벤트가 발생하면 workflow 실행
+  # main 브랜치에서 push 이벤트가 발생하면 workflow 실행
   push:
     branches: [ "main" ]
 
