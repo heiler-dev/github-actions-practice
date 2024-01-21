@@ -63,7 +63,7 @@ jobs:
           token: ${{ github.token }}
   
   push-to-ghcr:
-    # test가 사전에 통과해야 해당 job을 실행
+    # build-and-test가 사전에 통과해야 해당 job을 실행
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
