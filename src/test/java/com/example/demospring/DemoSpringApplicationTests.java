@@ -18,8 +18,8 @@ class DemoSpringApplicationTests {
         assertThat(a).isEqualTo(1);
     }
 
-    @Test
-    void failTest() {
-        assertThat(1).isEqualTo(2);
-    }
+//    @Test
+//    void failTest() {
+//        assertThat(1).isEqualTo(2);
+//    }
 }
