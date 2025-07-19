@@ -76,7 +76,7 @@ jobs:
             // GitHub Actions에서 전달 받은 Issue 정보
             const { issue } = context.payload;
             
-            // GitHub Project v2 ID (GraphQL 전용)
+            // Project v2 ID
             const projectNodeId = 'PVT_kwDODTY35s4A-Rii';
             
             const fieldData = await github.graphql(`
