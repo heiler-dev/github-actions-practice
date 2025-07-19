@@ -30,6 +30,31 @@ jobs:
               assignees: [author],
             });
 
+      - name: Set reviewers
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { pull_request: pr, repository } = context.payload;
+            const author = pr.user.login;
+
+            const feTeam = ['ohgus', 'AHHYUNJU', 'aydenote', 'jeongyou'];
+            const beTeam = ['threepebbles', 'goohong', 'cookie-meringue', 'DongchannN'];
+
+            const isAuthorFE = feTeam.includes(author);
+            const isAuthorBE = beTeam.includes(author);
+            const reviewers = (isAuthorFE ? feTeam : isAuthorBE ? beTeam : []).filter(r => r !== author);
+
+            if (reviewers.length) {
+              await github.rest.pulls.requestReviewers({
+                owner: repository.owner.login,
+                repo: repository.name,
+                pull_number: pr.number,
+                reviewers,
+              });
+            }
+
       - name: Set labels
         continue-on-error: true
         uses: actions/github-script@v7
@@ -134,16 +159,16 @@ jobs:
               contentId: pr.node_id,
             });
 
-            // 2. Status 필드 Todo로 설정
+            // 2. Status 필드 In Progress로 설정
             const itemId = addItemResponse.addProjectV2ItemById.item.id;
             const statusField = fields.find(f =>
               f.__typename === 'ProjectV2SingleSelectField' &&
               f.name?.toLowerCase() === 'status'
             );
             const statusFieldId = statusField?.id;
-            const todoOptionId = statusField?.options?.find(o => o.name.toLowerCase() === 'todo')?.id;
+            const inProgressOptionId = statusField?.options?.find(o => o.name.toLowerCase() === 'in progress')?.id;
             
-            if (statusFieldId && todoOptionId) {
+            if (statusFieldId && inProgressOptionId) {
               await github.graphql(`
                 mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
                   updateProjectV2ItemFieldValue(input: {
@@ -159,7 +184,7 @@ jobs:
                 projectId: projectNodeId,
                 itemId,
                 fieldId: statusFieldId,
-                optionId: todoOptionId,
+                optionId: inProgressOptionId,
               });
             }
 
