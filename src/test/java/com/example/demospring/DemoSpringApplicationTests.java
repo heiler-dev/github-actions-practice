@@ -12,7 +12,6 @@ class DemoSpringApplicationTests {
     void contextLoads() {
     }
 
-
     @Test
     void testExample1() {
         int a = 1;
