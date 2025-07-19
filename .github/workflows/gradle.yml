@@ -45,10 +45,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: (!cancelled())
         with:
-          files: |
-            **/build/test-results/**/*.xml
-            **/build/test-results/**/*.trx
-            **/build/test-results/**/*.json
+          files: '**/build/test-results/test/TEST-*.xml'
       
       # 테스트 실패 시, 실패한 코드 라인에 Check 코멘트를 등록
       - name: Comment to test failed code line
