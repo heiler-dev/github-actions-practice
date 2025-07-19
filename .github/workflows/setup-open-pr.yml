@@ -56,7 +56,7 @@ jobs:
             const feTeam = [];
             const beTeam = ['threepebbles'];
             
-            const author = issue.user.login;
+            const author = pr.user.login;
             const authorLabel = feTeam.includes(author) ? 'fe' : beTeam.includes(author) ? 'be' : null;
             if (authorLabel) labels.push(authorLabel);
             
