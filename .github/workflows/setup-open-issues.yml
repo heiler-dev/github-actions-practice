@@ -73,6 +73,9 @@ jobs:
         with:
           github-token: ${{ secrets.PROJECT_V2_TOKEN }}
           script: |
+            // GitHub Actions에서 전달 받은 Issue 정보
+            const { issue } = context.payload;
+            
             // GitHub Project v2 ID (GraphQL 전용)
             const projectNodeId = 'PVT_kwDODTY35s4A-Rii';
             
@@ -83,12 +86,29 @@ jobs:
                     fields(first: 50) {
                       nodes {
                         __typename
-                        id
-                        name
+            
+                        ... on ProjectV2FieldCommon {
+                          id
+                          name
+                        }
+            
                         ... on ProjectV2SingleSelectField {
                           options {
                             id
                             name
+                          }
+                        }
+            
+                        ... on ProjectV2IterationField {
+                          configuration {
+                            __typename
+                            ... on ProjectV2IterationFieldConfiguration {
+                              iterations {
+                                id
+                                startDate
+                                duration
+                              }
+                            }
                           }
                         }
                       }
@@ -97,11 +117,9 @@ jobs:
                 }
               }
             `);
+
             const fields = fieldData.node.fields.nodes;
             
-            // GitHub Actions에서 전달 받은 Issue 정보
-            const { issue } = context.payload;
-
             // 1. Issue를 Project 아이템으로 추가
             const addItemResponse = await github.graphql(`
               mutation($projectId: ID!, $contentId: ID!) {
@@ -116,75 +134,64 @@ jobs:
 
             // 2. Status 필드 Todo로 설정
             const itemId = addItemResponse.addProjectV2ItemById.item.id;
-
-            // Status 필드 ID, Todo 옵션 ID 추출
-            const statusField = fields.find(f => f.name === 'Status' && f.__typename === 'ProjectV2SingleSelectField');
+            const statusField = fields.find(f =>
+              f.__typename === 'ProjectV2SingleSelectField' &&
+              f.name?.toLowerCase() === 'status'
+            );
             const statusFieldId = statusField?.id;
             const todoOptionId = statusField?.options?.find(o => o.name.toLowerCase() === 'todo')?.id;
             
-            await github.graphql(`
-              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                updateProjectV2ItemFieldValue(input: {
-                  projectId: $projectId,
-                  itemId: $itemId,
-                  fieldId: $fieldId,
-                  value: { singleSelectOptionId: $optionId }
-                }) {
-                  projectV2Item { id }
+            if (statusFieldId && todoOptionId) {
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item { id }
+                  }
                 }
-              }
-            `, {
-              projectId: projectNodeId,
-              itemId,
-              fieldId: statusFieldId,
-              optionId: todoOptionId,
-            });
+              `, {
+                projectId: projectNodeId,
+                itemId,
+                fieldId: statusFieldId,
+                optionId: todoOptionId,
+              });
+            }
 
             // 3. Start Date을 today로 설정
-            const startDateFieldId = fields.find(f => f.name === 'Start Date')?.id;
+            const startDateField = fields.find(f =>
+              f.__typename === 'ProjectV2Field' &&
+              f.name?.toLowerCase() === 'start date'
+            );
+            const startDateFieldId = startDateField?.id;
             
             const today = new Date();
             const todayISOString = today.toISOString().split('T')[0];
-            await github.graphql(`
-              mutation {
-                updateProjectV2ItemFieldValue(input: {
-                  projectId: "${projectNodeId}",
-                  itemId: "${itemId}",
-                  fieldId: "${startDateFieldId}",
-                  value: { date: "${todayISOString}" }
-                }) {
-                  projectV2Item { id }
-                }
-              }
-            `);
-            
-            // 4. iteration 설정
-            const iterationField = await github.graphql(`
-              query {
-                node(id: "${projectNodeId}") {
-                  ... on ProjectV2 {
-                    fields(first: 20) {
-                      nodes {
-                        ... on ProjectV2IterationField {
-                          id
-                          configuration {
-                            iterations {
-                              id
-                              startDate
-                              duration
-                            }
-                          }
-                        }
-                      }
-                    }
+            if (startDateFieldId) {
+              await github.graphql(`
+                mutation {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: "${projectNodeId}",
+                    itemId: "${itemId}",
+                    fieldId: "${startDateFieldId}",
+                    value: { date: "${todayISOString}" }
+                  }) {
+                    projectV2Item { id }
                   }
                 }
-              }
-            `);
-
-            const iterationFieldNode = iterationField.node.fields.nodes.find(f => f.configuration?.iterations);
-            const iterationFieldId = iterationFieldNode.id;
-            const iterations = iterationFieldNode.configuration.iterations;
+              `);
+            }
+            
+            // 4. iteration 설정
+            const iterationField = fields.find(f =>
+              f.__typename === 'ProjectV2IterationField' &&
+              f.configuration?.__typename === 'ProjectV2IterationFieldConfiguration'
+            );
+            const iterationFieldId = iterationField?.id;
+            const iterations = iterationField?.configuration?.iterations ?? [];
 
             // 오늘이 포함된 iteration 찾기
             function isDateInRange(start, durationDays) {
@@ -196,8 +203,7 @@ jobs:
 
             const matchingIteration = iterations.find(i => isDateInRange(i.startDate, i.duration));
 
-            if (matchingIteration) {
-              // 4. Iteration 필드 설정
+            if (iterationFieldId && matchingIteration) {
               await github.graphql(`
                 mutation {
                   updateProjectV2ItemFieldValue(input: {
