@@ -17,9 +17,4 @@ class DemoSpringApplicationTests {
         int a = 1;
         assertThat(a).isEqualTo(1);
     }
-
-//    @Test
-//    void failTest() {
-//        assertThat(1).isEqualTo(2);
-//    }
 }
