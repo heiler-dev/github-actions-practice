@@ -222,3 +222,32 @@ jobs:
                 }
               `);
             }
+            
+            // 5. Hierarchy 필드 task로 설정
+            const hierarchyField = fields.find(f =>
+              f.__typename === 'ProjectV2SingleSelectField' &&
+              f.name?.toLowerCase() === 'hierarchy'
+            );
+
+            const hierarchyFieldId = hierarchyField?.id;
+            const taskOptionId = hierarchyField?.options?.find(o => o.name.toLowerCase() === 'task')?.id;
+
+            if (hierarchyFieldId && taskOptionId) {
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) {
+                    projectV2Item { id }
+                  }
+                }
+              `, {
+                projectId: projectNodeId,
+                itemId,
+                fieldId: hierarchyFieldId,
+                optionId: taskOptionId,
+              });
+            }
