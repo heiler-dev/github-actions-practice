@@ -1,0 +1,136 @@
+name: Setup Opened Issues
+
+on:
+  issues:
+    types: [ opened, reopened ]
+
+jobs:
+  setup_issue:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Set assignees
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue, repository } = context.payload;
+            const author = issue.user.login;
+
+            await github.rest.issues.addAssignees({
+              owner: repository.owner.login,
+              repo: repository.name,
+              issue_number: issue.number,
+              assignees: [author],
+            });
+
+      - name: Set labels
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { issue, repository } = context.payload;
+            const title = issue.title;
+
+            const titleLabelMap = {
+              '[TEST]': 'test',
+              '[FEATURE]': 'feature',
+              '[FIX]': 'fix',
+              '[STYLE]': 'style',
+              '[DOCS]': 'docs',
+              '[CHORE]': 'chore',
+              '[REFACTOR]': 'refactor'
+            };
+
+            const feTeam = [];
+            const beTeam = ['threepebbles'];
+
+            const prefix = Object.keys(titleLabelMap).find(p => title.startsWith(p));
+            const author = issue.user.login;
+            const authorLabel = feTeam.includes(author) ? 'fe' : beTeam.includes(author) ? 'be' : null;
+
+            const labels = [];
+            if (prefix) labels.push(titleLabelMap[prefix]);
+            if (authorLabel) labels.push(authorLabel);
+
+            if (labels.length) {
+              await github.rest.issues.addLabels({
+                owner: repository.owner.login,
+                repo: repository.name,
+                issue_number: issue.number,
+                labels,
+              });
+            }
+#
+#      - name: Set Project v2
+#        continue-on-error: true
+#        uses: actions/github-script@v7
+#        with:
+#          github-token: ${{ secrets.PROJECT_V2_TOKEN }}
+#          script: |
+#            // GitHub Actions에서 전달 받은 Issue 정보
+#            const { issue } = context.payload;
+#
+#            // GitHub Project v2의 고유 Node ID (GraphQL 전용)
+#            const projectNodeId = 'PVT_kwDOA_44FM4A9rer';
+#
+#            // Issue를 Project 아이템으로 추가
+#            const addItemResponse = await github.graphql(`
+#              mutation($projectId: ID!, $contentId: ID!) {
+#                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+#                  item { id }
+#                }
+#              }
+#            `, {
+#              projectId: projectNodeId,
+#              contentId: issue.node_id,
+#            });
+#
+#            // 생성된 Project 아이템의 ID
+#            const itemId = addItemResponse.addProjectV2ItemById.item.id;
+#
+#            // Project의 Status 필드와 Todo 옵션의 고유 ID
+#            const statusFieldId = 'PVTSSF_lADOA_44FM4A9rerzgxT3kk';
+#            const todoOptionId = 'f75ad846';
+#
+#            // Start Date 필드의 고유 ID
+#            const startDateFieldId = 'PVTF_lADOA_44FM4A9rerzgxT3mY'
+#
+#            // Status 필드 Todo로 설정
+#            await github.graphql(`
+#              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+#                updateProjectV2ItemFieldValue(input: {
+#                  projectId: $projectId,
+#                  itemId: $itemId,
+#                  fieldId: $fieldId,
+#                  value: { singleSelectOptionId: $optionId }
+#                }) {
+#                  projectV2Item { id }
+#                }
+#              }
+#            `, {
+#              projectId: projectNodeId,
+#              itemId,
+#              fieldId: statusFieldId,
+#              optionId: todoOptionId,
+#            });
+#
+#            // Start Date을 today로 설정
+#            const today = new Date().toISOString().split('T')[0];
+#            await github.graphql(`
+#              mutation {
+#                updateProjectV2ItemFieldValue(input: {
+#                  projectId: "${projectNodeId}",
+#                  itemId: "${itemId}",
+#                  fieldId: "${startDateFieldId}",
+#                  value: { date: "${today}" }
+#                }) {
+#                  projectV2Item { id }
+#                }
+#              }
+#            `);
