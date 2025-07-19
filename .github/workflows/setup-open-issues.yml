@@ -82,11 +82,12 @@ jobs:
 
             // Start Date 필드의 고유 ID
             const startDateFieldId = 'PVTF_lADODTY35s4A-Riizgxujmw'
-
+            
             // GitHub Actions에서 전달 받은 Issue 정보
             const { issue } = context.payload;
 
-            // Issue를 Project 아이템으로 추가
+            
+            // 1. Issue를 Project 아이템으로 추가
             const addItemResponse = await github.graphql(`
               mutation($projectId: ID!, $contentId: ID!) {
                 addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
@@ -98,8 +99,8 @@ jobs:
               contentId: issue.node_id,
             });
 
+            // 2. Status 필드 Todo로 설정
             const itemId = addItemResponse.addProjectV2ItemById.item.id;
-            // Status 필드 Todo로 설정
             await github.graphql(`
               mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
                 updateProjectV2ItemFieldValue(input: {
@@ -118,17 +119,74 @@ jobs:
               optionId: todoOptionId,
             });
 
-            // Start Date을 today로 설정
-            const today = new Date().toISOString().split('T')[0];
+            // 3. Start Date을 today로 설정
+            const today = new Date();
+            const todayISOString = today.toISOString().split('T')[0];
             await github.graphql(`
               mutation {
                 updateProjectV2ItemFieldValue(input: {
                   projectId: "${projectNodeId}",
                   itemId: "${itemId}",
                   fieldId: "${startDateFieldId}",
-                  value: { date: "${today}" }
+                  value: { date: "${todayISOString}" }
                 }) {
                   projectV2Item { id }
                 }
               }
             `);
+            
+            // 4. iteration 설정
+            const iterationField = await github.graphql(`
+              query {
+                node(id: "${projectNodeId}") {
+                  ... on ProjectV2 {
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2IterationField {
+                          id
+                          configuration {
+                            iterations {
+                              id
+                              startDate
+                              duration
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `);
+
+            const iterationFieldNode = iterationField.node.fields.nodes.find(f => f.configuration?.iterations);
+            const iterationFieldId = iterationFieldNode.id;
+            const iterations = iterationFieldNode.configuration.iterations;
+
+            // 오늘이 포함된 iteration 찾기
+            function isDateInRange(start, durationDays) {
+              const startDate = new Date(start);
+              const endDate = new Date(startDate);
+              endDate.setDate(endDate.getDate() + durationDays);
+              return today >= startDate && today < endDate;
+            }
+
+            const matchingIteration = iterations.find(i => isDateInRange(i.startDate, i.duration));
+
+            if (matchingIteration) {
+              // 4. Iteration 필드 설정
+              await github.graphql(`
+                mutation {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: "${projectNodeId}",
+                    itemId: "${itemId}",
+                    fieldId: "${iterationFieldId}",
+                    value: {
+                      iterationId: "${matchingIteration.id}"
+                    }
+                  }) {
+                    projectV2Item { id }
+                  }
+                }
+              `);
+            }
