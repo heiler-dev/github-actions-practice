@@ -1,4 +1,4 @@
-name: Setup PR Metadata
+name: Setup Opened PR
 
 on:
   pull_request:
@@ -53,8 +53,8 @@ jobs:
             if (branchPrefix) labels.push(branchLabelMap[branchPrefix]);
             
             // 2. author 기반 라벨 추가
-            const feTeam = [];
-            const beTeam = ['threepebbles'];
+            const feTeam = ['ohgus', 'AHHYUNJU', 'aydenote', 'jeongyou'];
+            const beTeam = ['threepebbles', 'goohong', 'cookie-meringue', 'DongchannN'];
             
             const author = pr.user.login;
             const authorLabel = feTeam.includes(author) ? 'frontend' : beTeam.includes(author) ? 'backend' : null;
@@ -131,7 +131,7 @@ jobs:
               }
             `, {
               projectId: projectNodeId,
-              contentId: issue.node_id,
+              contentId: pr.node_id,
             });
 
             // 2. Status 필드 Todo로 설정
