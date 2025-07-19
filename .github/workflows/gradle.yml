@@ -49,13 +49,14 @@ jobs:
 
       # Unit test 진행
       - name: Test with Gradle
-        run: ./gradlew --info test
+        run: ./gradlew test
         
       # Unit test에 대한 리포트 작성
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: (!cancelled())
         with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           files: '**/build/test-results/test/TEST-*.xml'
       
       # 테스트 실패 시, 실패한 코드 라인에 Check 코멘트를 등록
