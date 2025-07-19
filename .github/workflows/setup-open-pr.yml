@@ -75,8 +75,8 @@ jobs:
         with:
           github-token: ${{ secrets.PROJECT_V2_TOKEN }}
           script: |
-            // GitHub Actions에서 전달 받은 Issue 정보
-            const { issue } = context.payload;
+            // GitHub Actions에서 전달 받은 PR 정보
+            const { pull_request: pr } = context.payload;
             
             // Project v2 ID
             const projectNodeId = 'PVT_kwDODTY35s4A-Rii';
