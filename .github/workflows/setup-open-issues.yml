@@ -66,71 +66,69 @@ jobs:
                 labels,
               });
             }
-#
-#      - name: Set Project v2
-#        continue-on-error: true
-#        uses: actions/github-script@v7
-#        with:
-#          github-token: ${{ secrets.PROJECT_V2_TOKEN }}
-#          script: |
-#            // GitHub Actions에서 전달 받은 Issue 정보
-#            const { issue } = context.payload;
-#
-#            // GitHub Project v2의 고유 Node ID (GraphQL 전용)
-#            const projectNodeId = 'PVT_kwDOA_44FM4A9rer';
-#
-#            // Issue를 Project 아이템으로 추가
-#            const addItemResponse = await github.graphql(`
-#              mutation($projectId: ID!, $contentId: ID!) {
-#                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
-#                  item { id }
-#                }
-#              }
-#            `, {
-#              projectId: projectNodeId,
-#              contentId: issue.node_id,
-#            });
-#
-#            // 생성된 Project 아이템의 ID
-#            const itemId = addItemResponse.addProjectV2ItemById.item.id;
-#
-#            // Project의 Status 필드와 Todo 옵션의 고유 ID
-#            const statusFieldId = 'PVTSSF_lADOA_44FM4A9rerzgxT3kk';
-#            const todoOptionId = 'f75ad846';
-#
-#            // Start Date 필드의 고유 ID
-#            const startDateFieldId = 'PVTF_lADOA_44FM4A9rerzgxT3mY'
-#
-#            // Status 필드 Todo로 설정
-#            await github.graphql(`
-#              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-#                updateProjectV2ItemFieldValue(input: {
-#                  projectId: $projectId,
-#                  itemId: $itemId,
-#                  fieldId: $fieldId,
-#                  value: { singleSelectOptionId: $optionId }
-#                }) {
-#                  projectV2Item { id }
-#                }
-#              }
-#            `, {
-#              projectId: projectNodeId,
-#              itemId,
-#              fieldId: statusFieldId,
-#              optionId: todoOptionId,
-#            });
-#
-#            // Start Date을 today로 설정
-#            const today = new Date().toISOString().split('T')[0];
-#            await github.graphql(`
-#              mutation {
-#                updateProjectV2ItemFieldValue(input: {
-#                  projectId: "${projectNodeId}",
-#                  itemId: "${itemId}",
-#                  fieldId: "${startDateFieldId}",
-#                  value: { date: "${today}" }
-#                }) {
-#                  projectV2Item { id }
-#                }
-#              }
-#            `);
+
+      - name: Set Project v2
+        continue-on-error: true
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECT_V2_TOKEN }}
+          script: |
+            // GitHub Project v2 ID (GraphQL 전용)
+            const projectNodeId = 'PVT_kwHOAaxoFs4A-RbQ';
+            
+            // Project의 Status 필드와 Todo 옵션의 고유 ID
+            const statusFieldId = 'PVTSSF_lAHOAaxoFs4A-RbQzgxuekg';
+            const todoOptionId = 'f75ad846';
+
+            // Start Date 필드의 고유 ID
+            const startDateFieldId = 'PVTF_lAHOAaxoFs4A-RbQzgxuelo'
+
+            // GitHub Actions에서 전달 받은 Issue 정보
+            const { issue } = context.payload;
+
+            // Issue를 Project 아이템으로 추가
+            const addItemResponse = await github.graphql(`
+              mutation($projectId: ID!, $contentId: ID!) {
+                addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                  item { id }
+                }
+              }
+            `, {
+              projectId: projectNodeId,
+              contentId: issue.node_id,
+            });
+
+            const itemId = addItemResponse.addProjectV2ItemById.item.id;
+            // Status 필드 Todo로 설정
+            await github.graphql(`
+              mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: $projectId,
+                  itemId: $itemId,
+                  fieldId: $fieldId,
+                  value: { singleSelectOptionId: $optionId }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `, {
+              projectId: projectNodeId,
+              itemId,
+              fieldId: statusFieldId,
+              optionId: todoOptionId,
+            });
+
+            // Start Date을 today로 설정
+            const today = new Date().toISOString().split('T')[0];
+            await github.graphql(`
+              mutation {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: "${projectNodeId}",
+                  itemId: "${itemId}",
+                  fieldId: "${startDateFieldId}",
+                  value: { date: "${today}" }
+                }) {
+                  projectV2Item { id }
+                }
+              }
+            `);
