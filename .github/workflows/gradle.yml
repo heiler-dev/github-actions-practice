@@ -10,6 +10,12 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  pull-requests: write
+  contents: read
+  issues: write
+  checks: write
+
 jobs:
   build-and-test:
     # Runner가 동작할 OS 환경
@@ -56,7 +62,6 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: (!cancelled())
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
           files: '**/build/test-results/test/TEST-*.xml'
       
       # 테스트 실패 시, 실패한 코드 라인에 Check 코멘트를 등록
