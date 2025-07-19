@@ -35,8 +35,11 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { issue, repository } = context.payload;
+            
+            const labels = [];
+            
+            // 1. title 기반 라벨 추가 
             const title = issue.title;
-
             const titleLabelMap = {
               '[TEST]': 'test',
               '[FEATURE]': 'feature',
@@ -46,16 +49,15 @@ jobs:
               '[CHORE]': 'chore',
               '[REFACTOR]': 'refactor'
             };
-
+            const prefix = Object.keys(titleLabelMap).find(p => title.startsWith(p));
+            if (prefix) labels.push(titleLabelMap[prefix]);
+            
+            // 2. author 기반 라벨 추가
             const feTeam = [];
             const beTeam = ['threepebbles'];
-
-            const prefix = Object.keys(titleLabelMap).find(p => title.startsWith(p));
+            
             const author = issue.user.login;
             const authorLabel = feTeam.includes(author) ? 'fe' : beTeam.includes(author) ? 'be' : null;
-
-            const labels = [];
-            if (prefix) labels.push(titleLabelMap[prefix]);
             if (authorLabel) labels.push(authorLabel);
 
             if (labels.length) {

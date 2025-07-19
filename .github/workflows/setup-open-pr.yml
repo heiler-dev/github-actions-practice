@@ -37,23 +37,28 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const { pull_request: pr, repository } = context.payload;
-            const branch = pr.head.ref;
-            const title = pr.title;
             
+            const labels = [];
+            
+            // 1. branch prefix 기반 라벨 추가
+            const branch = pr.head.ref;
             const branchLabelMap = {
               'feature/': 'feature',
               'fix/': 'fix',
-              'refactor/': 'refactor'
+              'refactor/': 'refactor',
               'chore/': 'chore',
               'hotfix/': 'hotfix',
             };
-            
             const branchPrefix = Object.keys(branchLabelMap).find(p => branch.startsWith(p));
-            const titlePrefixLabel = title.startsWith('[FE]') ? 'fe' : title.startsWith('[BE]') ? 'be' : null;
-            
-            const labels = [];
             if (branchPrefix) labels.push(branchLabelMap[branchPrefix]);
-            if (titlePrefixLabel) labels.push(titlePrefixLabel);
+            
+            // 2. author 기반 라벨 추가
+            const feTeam = [];
+            const beTeam = ['threepebbles'];
+            
+            const author = issue.user.login;
+            const authorLabel = feTeam.includes(author) ? 'fe' : beTeam.includes(author) ? 'be' : null;
+            if (authorLabel) labels.push(authorLabel);
             
             if (labels.length) {
               await github.rest.issues.addLabels({
