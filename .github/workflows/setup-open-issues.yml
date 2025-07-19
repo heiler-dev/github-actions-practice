@@ -74,14 +74,14 @@ jobs:
           github-token: ${{ secrets.PROJECT_V2_TOKEN }}
           script: |
             // GitHub Project v2 ID (GraphQL 전용)
-            const projectNodeId = 'PVT_kwHOAaxoFs4A-RbQ';
+            const projectNodeId = 'PVT_kwDODTY35s4A-Rii';
             
             // Project의 Status 필드와 Todo 옵션의 고유 ID
-            const statusFieldId = 'PVTSSF_lAHOAaxoFs4A-RbQzgxuekg';
+            const statusFieldId = 'PVTSSF_lADODTY35s4A-RiizgxujjE';
             const todoOptionId = 'f75ad846';
 
             // Start Date 필드의 고유 ID
-            const startDateFieldId = 'PVTF_lAHOAaxoFs4A-RbQzgxuelo'
+            const startDateFieldId = 'PVTF_lADODTY35s4A-Riizgxujmw'
 
             // GitHub Actions에서 전달 받은 Issue 정보
             const { issue } = context.payload;
