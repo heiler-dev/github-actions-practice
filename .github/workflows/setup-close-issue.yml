@@ -44,7 +44,7 @@ jobs:
             // 이 Issue를 포함하는 Item 찾기
             const itemResp = await github.graphql(`
               query {
-                node(id: "${projectId}") {
+                node(id: "${projectNodeId}") {
                   ... on ProjectV2 {
                     items(first: 50) {
                       nodes {
