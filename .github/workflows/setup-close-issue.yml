@@ -105,22 +105,15 @@ jobs:
 
             if (endDateFieldId) {
               await github.graphql(`
-                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: String!) {
+                mutation {
                   updateProjectV2ItemFieldValue(input: {
-                    projectId: $projectId,
-                    itemId: $itemId,
-                    fieldId: $fieldId,
-                    value: { date: $date }
+                    projectId: ${projectId},
+                    itemId: ${itemId},
+                    fieldId: ${endDateFieldId},
+                    value: { date: ${todayISOString} }
                   }) {
-                    projectV2Item {
-                      id
-                    }
+                    projectV2Item { id }
                   }
                 }
-              `, {
-                projectId: projectNodeId,
-                itemId,
-                fieldId: endDateFieldId,
-                date: todayISOString
-              });
+              `);
             }
