@@ -18,35 +18,56 @@ jobs:
         with:
           github-token: ${{ secrets.PROJECT_V2_TOKEN }}
           script: |
-            const { issue } = context.payload;
-            
-            // Project v2 ID
+            const { issue, repository } = context.payload;
+
             const projectNodeId = 'PVT_kwDODTY35s4A-Rii';
+            const owner = repository.owner.login;
+            const repo = repository.name;
+            const issueNumber = issue.number;
+
+            // 1. issue.number로부터 node_id 조회
+            const issueNodeResp = await github.graphql(`
+              query($owner: String!, $repo: String!, $issueNumber: Int!) {
+                repository(owner: $owner, name: $repo) {
+                  issue(number: $issueNumber) {
+                    id
+                  }
+                }
+              }
+            `, {
+              owner,
+              repo,
+              issueNumber
+            });
+            const issueNodeId = issueNodeResp.repository.issue.id;
+
+            // 2. 프로젝트의 field 정보 가져오기
             const fieldData = await github.graphql(`
-              query {
-                node(id: "${projectNodeId}") {
+              query($projectId: ID!) {
+                node(id: $projectId) {
                   ... on ProjectV2 {
                     fields(first: 50) {
                       nodes {
                         __typename
                         ... on ProjectV2FieldCommon {
-                            id
-                            name
+                          id
+                          name
                         }
                       }
                     }
                   }
                 }
               }
-            `);
+            `, { projectId: projectNodeId });
+
             const fields = fieldData.node.fields.nodes;
-            
-            // 이 Issue를 포함하는 Item 찾기
+
+            // 3. 해당 issue가 포함된 item 찾기
             const itemResp = await github.graphql(`
-              query {
-                node(id: "${projectNodeId}") {
+              query($projectId: ID!) {
+                node(id: $projectId) {
                   ... on ProjectV2 {
-                    items(first: 50) {
+                    items(first: 100) {
                       nodes {
                         id
                         content {
@@ -59,38 +80,47 @@ jobs:
                   }
                 }
               }
-            `);
+            `, { projectId: projectNodeId });
 
             const itemNode = itemResp.node.items.nodes.find(
-              item => item.content?.id === issue.node_id
+              item => item.content?.id === issueNodeId
             );
             if (!itemNode) {
               console.log("이 이슈에 해당하는 Project 항목을 찾을 수 없습니다.");
               return;
             }
+
             const itemId = itemNode.id;
-            
-            // End date을 today로 설정
+
+            // 4. End date 필드 찾기
             const endDateField = fields.find(f =>
               f.__typename === 'ProjectV2Field' &&
               f.name?.toLowerCase() === 'end date'
             );
             const endDateFieldId = endDateField?.id;
-            
+
+            // 5. 오늘 날짜를 ISO 형식으로 설정
             const today = new Date();
             const todayISOString = today.toISOString().split('T')[0];
-            
+
             if (endDateFieldId) {
               await github.graphql(`
-                mutation {
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: String!) {
                   updateProjectV2ItemFieldValue(input: {
-                    projectId: "${projectNodeId}",
-                    itemId: "${itemId}",
-                    fieldId: "${endDateFieldId}",
-                    value: { date: "${todayISOString}" }
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { date: $date }
                   }) {
-                    projectV2Item { id }
+                    projectV2Item {
+                      id
+                    }
                   }
                 }
-              `);
+              `, {
+                projectId: projectNodeId,
+                itemId,
+                fieldId: endDateFieldId,
+                date: todayISOString
+              });
             }
