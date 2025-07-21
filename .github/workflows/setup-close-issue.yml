@@ -107,7 +107,7 @@ jobs:
               await github.graphql(`
                 mutation {
                   updateProjectV2ItemFieldValue(input: {
-                    projectId: ${projectId},
+                    projectId: ${projectNodeId},
                     itemId: ${itemId},
                     fieldId: ${endDateFieldId},
                     value: { date: ${todayISOString} }
