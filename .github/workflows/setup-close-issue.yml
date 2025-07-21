@@ -21,7 +21,7 @@ jobs:
             const { issue } = context.payload;
             
             // Project v2 ID
-            const projectNodeId = 'PVT_kwDOA_44FM4A9rer';
+            const projectNodeId = 'PVT_kwDODTY35s4A-Rii';
             const fieldData = await github.graphql(`
               query {
                 node(id: "${projectNodeId}") {
